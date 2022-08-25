@@ -1,17 +1,16 @@
 import { useState, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
 import { Area } from 'react-easy-crop/types';
-import { readFile } from '../../main/helpers';
+import { readFile, cropimageData } from '../../main/helpers';
 
 export default function Photo() {
-
   const [imageSrc, setImageSrc] = useState(null); // file data
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [filename, setFilename] = useState(null); // file address
 
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area>()
-  const onCropComplete = useCallback((croppedArea: Area, _croppedAreaPixels: Area) => {
+  const onCropComplete = useCallback((_croppedArea: Area, _croppedAreaPixels: Area) => {
     setCroppedAreaPixels(_croppedAreaPixels)
   }, [])
 
@@ -26,9 +25,15 @@ export default function Photo() {
       setImageSrc(imageData)
     }
   };
-  const handleSave = () => {
+  const handleSave = async () => {
     //first save the cropped image
-    // saveCroppedImage(filename, imageSrc, croppedAreaPixels)
+    // first create the cropped image data using a canvas
+    const base64data = await cropimageData(imageSrc, croppedAreaPixels!)
+    .catch(console.error)
+    // create a new filename
+    const newFileName = filename + '-cropped.png'
+    //then send those results to saveImage via ipcRender event
+    window.electron.saveCroppedImage([newFileName, base64data])
     //then reset the interface
     setImageSrc(null)
     setZoom(1)
